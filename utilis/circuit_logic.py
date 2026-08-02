@@ -1,3 +1,4 @@
+import streamlit as st 
 def series_circuit_calc(voltage, r1, r2):
     """Simple series circuit: battery, R1, R2 in series."""
     total_resistance = r1 + r2
