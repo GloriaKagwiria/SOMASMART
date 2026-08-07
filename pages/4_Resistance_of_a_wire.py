@@ -64,4 +64,4 @@ if st.session_state.wire_readings:
     else:
         st.caption("Record at least one more reading at a different length to see the graph.")
 else:
-    st.caption("No readings yet — move the length slider and click **Record this reading** at a few different lengths, just like moving the jockey in the lab.")_
+    st.caption("No readings yet — move the length slider and click **Record this reading** at a few different lengths, just like moving the jockey in the lab.")
