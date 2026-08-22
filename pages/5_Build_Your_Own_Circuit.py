@@ -9,7 +9,7 @@ from utils.circuit_logic import (
     general_series_calc,
     general_parallel_calc,
     draw_analog_meter,
-    nice_max_scale,
+    get_minor_step,
 )
 
 
@@ -44,7 +44,6 @@ def draw_general_series(voltage, components, include_ammeter, include_galvanomet
     d += elm.Line().down().length(1)
     d += elm.Line().to(batt.start)
 
-    # Voltmeter drawn as a real branch across the probed component
     probe = comp_elements[probe_index]
     d += elm.Line().at(probe.start).up().length(1.3)
     d += elm.MeterV().right().tox(probe.end).label("V")
@@ -134,7 +133,7 @@ else:
     fig = draw_general_parallel(voltage, components, include_ammeter, include_galvanometer, probe_index)
 st.pyplot(fig.fig)
 
-# --- Compute values ---
+# --- Compute true values ---
 resistances = [c["value"] for c in components]
 if arrangement == "Series" or num_components == 1:
     result = general_series_calc(voltage, resistances)
@@ -145,20 +144,42 @@ else:
     main_current = result["total_current"]
     probe_voltage = voltage  # every branch sees full voltage in parallel
 
-# --- Live meters, read directly off the dial ---
-st.subheader("Read the meters")
-gauge_cols = st.columns(sum([include_ammeter, include_galvanometer, True]))
-col_i = 0
+# --- Build the list of active meters to show and check ---
+meter_specs = []  # (name, true_value, unit)
 if include_ammeter:
-    with gauge_cols[col_i]:
-        st.pyplot(draw_analog_meter(main_current, nice_max_scale(main_current), label="Ammeter", unit="A"))
-    col_i += 1
+    meter_specs.append(("Ammeter", main_current, "A"))
 if include_galvanometer:
-    with gauge_cols[col_i]:
-        st.pyplot(draw_analog_meter(main_current, nice_max_scale(main_current), label="Galvanometer", unit="A"))
-    col_i += 1
-with gauge_cols[col_i]:
-    st.pyplot(draw_analog_meter(probe_voltage, nice_max_scale(probe_voltage), label="Voltmeter", unit="V"))
+    meter_specs.append(("Galvanometer", main_current, "A"))
+meter_specs.append(("Voltmeter", probe_voltage, "V"))
+
+st.subheader("Read the meters yourself")
+st.write(
+    "Look carefully at each gauge — including the small marks between the labeled numbers — "
+    "and type what you read before checking. This is the actual skill being tested in a real practical, "
+    "not just watching the needle."
+)
+
+gauge_cols = st.columns(len(meter_specs))
+user_readings = {}
+for col, (name, true_val, unit) in zip(gauge_cols, meter_specs):
+    with col:
+        st.pyplot(draw_analog_meter(true_val, label=name, unit=unit))
+        step = get_minor_step(true_val)
+        user_readings[name] = st.number_input(
+            f"Your {name} reading ({unit})", min_value=0.0, step=step, key=f"reading_{name}"
+        )
+
+if st.button("Check My Readings"):
+    for name, true_val, unit in meter_specs:
+        tolerance = get_minor_step(true_val)
+        guess = user_readings[name]
+        if abs(guess - true_val) <= tolerance:
+            st.success(f"**{name}:** good reading! Actual value is {true_val:.2f} {unit}.")
+        else:
+            st.warning(
+                f"**{name}:** not quite — actual value is {true_val:.2f} {unit}. "
+                f"Look again at where the needle sits relative to the small marks (each is {tolerance:g} {unit})."
+            )
 
 for i, comp in enumerate(components):
     if comp["type"] == "Bulb":
