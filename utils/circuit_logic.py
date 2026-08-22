@@ -83,26 +83,30 @@ def nice_max_scale(value):
     return round(value * 1.2, 1)
 
 
-def draw_analog_meter(value, max_value, label="Current", unit="A", needle_color="crimson"):
+def draw_analog_meter(value, max_value, label="Current", unit="A", needle_color="crimson", major_ticks=5, minor_per_major=4):
     """
     Draws a semicircular analog meter dial with a needle pointing at `value`,
-    scaled against `max_value`. Returns a matplotlib figure — pass it to st.pyplot(fig).
+    scaled against `max_value`. Minor tick marks between the labeled major ticks
+    let a student read the value more precisely, the same way a real analog
+    meter scale works. Returns a matplotlib figure — pass it to st.pyplot(fig).
     """
-    fig, ax = plt.subplots(figsize=(3.2, 2.2))
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
     theta = np.linspace(180, 0, 100)
-    xs = np.cos(np.radians(theta))
-    ys = np.sin(np.radians(theta))
-    ax.plot(xs, ys, color="black", linewidth=2)
+    ax.plot(np.cos(np.radians(theta)), np.sin(np.radians(theta)), color="black", linewidth=2)
 
-    num_ticks = 6
-    for i in range(num_ticks + 1):
-        t = 180 - (180 * i / num_ticks)
-        x1, y1 = 0.88 * np.cos(np.radians(t)), 0.88 * np.sin(np.radians(t))
+    total_minor = major_ticks * minor_per_major
+    for i in range(total_minor + 1):
+        t = 180 - (180 * i / total_minor)
+        is_major = (i % minor_per_major == 0)
+        r_in = 0.88 if is_major else 0.93
+        lw = 1.4 if is_major else 0.8
+        x1, y1 = r_in * np.cos(np.radians(t)), r_in * np.sin(np.radians(t))
         x2, y2 = 1.0 * np.cos(np.radians(t)), 1.0 * np.sin(np.radians(t))
-        ax.plot([x1, x2], [y1, y2], color="black", linewidth=1.2)
-        val_label = max_value * i / num_ticks
-        lx, ly = 1.18 * np.cos(np.radians(t)), 1.18 * np.sin(np.radians(t))
-        ax.text(lx, ly, f"{val_label:.1f}", ha="center", va="center", fontsize=7.5)
+        ax.plot([x1, x2], [y1, y2], color="black", linewidth=lw)
+        if is_major:
+            val_label = max_value * i / total_minor
+            lx, ly = 1.18 * np.cos(np.radians(t)), 1.18 * np.sin(np.radians(t))
+            ax.text(lx, ly, f"{val_label:.2g}", ha="center", va="center", fontsize=7.5)
 
     fraction = min(max(value / max_value, 0), 1)
     needle_angle = 180 - 180 * fraction
