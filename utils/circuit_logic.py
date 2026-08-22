@@ -75,28 +75,73 @@ def general_parallel_calc(voltage, resistances):
     }
 
 
+# --- Meter dial scales -------------------------------------------------
+# Each entry is (max_value, major_step, minor_step), hand-picked so that
+# major_step is always an exact multiple of minor_step — no messy numbers
+# like "every 0.2173 units." That's what makes the minor ticks usable for
+# an actual reading instead of just visual decoration.
+_SCALE_PRESETS = [
+    (0.5, 0.1, 0.02),
+    (1,   0.2, 0.05),
+    (2,   0.5, 0.1),
+    (5,   1,   0.2),
+    (10,  2,   0.5),
+    (15,  3,   1),
+    (20,  4,   1),
+    (30,  5,   1),
+    (50,  10,  2),
+    (100, 20,  5),
+]
+
+
+def _pick_scale(raw_value):
+    """Given a raw value the needle needs to point at, pick a clean dial scale for it."""
+    for max_value, major_step, minor_step in _SCALE_PRESETS:
+        if raw_value <= max_value * 0.9:
+            return max_value, major_step, minor_step
+    max_value = round(raw_value * 1.2, 1)
+    return max_value, max_value / 5, max_value / 25
+
+
 def nice_max_scale(value):
-    """Picks a sensible round-number maximum for a meter dial, given the value it needs to display."""
-    for m in [0.5, 1, 2, 5, 10, 15, 20, 30, 50, 100]:
-        if value <= m * 0.9:
-            return m
-    return round(value * 1.2, 1)
+    """Kept for compatibility with existing pages — returns just the dial's max value."""
+    max_value, _, _ = _pick_scale(value)
+    return max_value
 
 
-def draw_analog_meter(value, max_value, label="Current", unit="A", needle_color="crimson", major_ticks=5, minor_per_major=4):
+def get_minor_step(value):
     """
-    Draws a semicircular analog meter dial with a needle pointing at `value`,
-    scaled against `max_value`. Minor tick marks between the labeled major ticks
-    let a student read the value more precisely, the same way a real analog
-    meter scale works. Returns a matplotlib figure — pass it to st.pyplot(fig).
+    Returns the size of one minor tick on the dial this value would be drawn on.
+    Use this as the tolerance when checking a student's typed-in reading — it's
+    the finest increment the dial actually lets you distinguish.
     """
+    _, _, minor_step = _pick_scale(value)
+    return minor_step
+
+
+def draw_analog_meter(value, max_value=None, label="Current", unit="A", needle_color="crimson"):
+    """
+    Draws a semicircular analog meter dial with a needle pointing at `value`.
+    Major ticks are labeled; minor ticks between them are unlabeled but sized
+    to a clean, stated increment (shown as a caption on the dial itself), so
+    a student can read a precise value by counting minor ticks from the
+    nearest major one — not just eyeball "somewhere between."
+
+    `max_value` is accepted for backward compatibility with existing calls
+    but is no longer required — the scale is now always derived internally
+    from `value` so the calibration is guaranteed to be clean.
+    """
+    dial_max, major_step, minor_step = _pick_scale(value)
+    minor_per_major = round(major_step / minor_step)
+    n_minor_total = round(dial_max / minor_step)
+
     fig, ax = plt.subplots(figsize=(3.4, 2.4))
     theta = np.linspace(180, 0, 100)
     ax.plot(np.cos(np.radians(theta)), np.sin(np.radians(theta)), color="black", linewidth=2)
 
-    total_minor = major_ticks * minor_per_major
-    for i in range(total_minor + 1):
-        t = 180 - (180 * i / total_minor)
+    for i in range(n_minor_total + 1):
+        v = i * minor_step
+        t = 180 - 180 * (v / dial_max)
         is_major = (i % minor_per_major == 0)
         r_in = 0.88 if is_major else 0.93
         lw = 1.4 if is_major else 0.8
@@ -104,19 +149,19 @@ def draw_analog_meter(value, max_value, label="Current", unit="A", needle_color=
         x2, y2 = 1.0 * np.cos(np.radians(t)), 1.0 * np.sin(np.radians(t))
         ax.plot([x1, x2], [y1, y2], color="black", linewidth=lw)
         if is_major:
-            val_label = max_value * i / total_minor
             lx, ly = 1.18 * np.cos(np.radians(t)), 1.18 * np.sin(np.radians(t))
-            ax.text(lx, ly, f"{val_label:.2g}", ha="center", va="center", fontsize=7.5)
+            ax.text(lx, ly, f"{v:.2g}", ha="center", va="center", fontsize=7.5)
 
-    fraction = min(max(value / max_value, 0), 1)
+    fraction = min(max(value / dial_max, 0), 1)
     needle_angle = 180 - 180 * fraction
     nx, ny = 0.75 * np.cos(np.radians(needle_angle)), 0.75 * np.sin(np.radians(needle_angle))
     ax.plot([0, nx], [0, ny], color=needle_color, linewidth=2.5, solid_capstyle="round")
     ax.scatter([0], [0], color="black", s=25, zorder=5)
 
-    ax.text(0, -0.32, f"{label} ({unit})", ha="center", fontsize=10, fontweight="bold")
+    ax.text(0, -0.30, f"{label} ({unit})", ha="center", fontsize=10, fontweight="bold")
+    ax.text(0, -0.42, f"each small mark = {minor_step:g} {unit}", ha="center", fontsize=7, color="gray")
     ax.set_xlim(-1.4, 1.4)
-    ax.set_ylim(-0.45, 1.35)
+    ax.set_ylim(-0.55, 1.35)
     ax.set_aspect("equal")
     ax.axis("off")
     return fig
