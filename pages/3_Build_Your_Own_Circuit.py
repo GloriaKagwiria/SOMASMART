@@ -10,6 +10,7 @@ from utils.circuit_logic import (
     general_parallel_calc,
     draw_analog_meter,
     get_minor_step,
+    log_reading_attempt,
 )
 
 
@@ -173,7 +174,9 @@ if st.button("Check My Readings"):
     for name, true_val, unit in meter_specs:
         tolerance = get_minor_step(true_val)
         guess = user_readings[name]
-        if abs(guess - true_val) <= tolerance:
+        is_correct = abs(guess - true_val) <= tolerance
+        log_reading_attempt(is_correct, "Build Your Own Circuit")
+        if is_correct:
             st.success(f"**{name}:** good reading! Actual value is {true_val:.2f} {unit}.")
         else:
             st.warning(

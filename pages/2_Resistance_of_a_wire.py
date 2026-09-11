@@ -1,3 +1,4 @@
+
 import matplotlib
 matplotlib.use("Agg")
 import streamlit as st
@@ -5,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import schemdraw
 import schemdraw.elements as elm
-from utils.circuit_logic import draw_analog_meter, nice_max_scale
+from utils.circuit_logic import draw_analog_meter, nice_max_scale, mark_practical_attempted
 
 st.title("🧵 Resistance of a Wire — Practical")
 st.write(
@@ -56,6 +57,7 @@ if "wire_readings" not in st.session_state:
 
 col1, col2 = st.columns(2)
 if col1.button("📏 Record this reading"):
+    mark_practical_attempted("Resistance of a Wire")
     st.session_state.wire_readings.append({
         "Length (cm)": length_cm,
         "Resistance (Ω)": round(resistance, 2),
