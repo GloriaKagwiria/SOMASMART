@@ -167,7 +167,7 @@ for col, (name, true_val, unit) in zip(gauge_cols, meter_specs):
         st.pyplot(draw_analog_meter(true_val, label=name, unit=unit))
         step = get_minor_step(true_val)
         user_readings[name] = st.number_input(
-            f"Your {name} reading ({unit})", min_value=0.0, step=step, key=f"reading_{name}"
+            f"Your {name} reading ({unit})", min_value=0.0, value=0.0, step=float(step), key=f"reading_{name}"
         )
 
 if st.button("Check My Readings"):

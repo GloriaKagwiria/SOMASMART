@@ -1,51 +1,19 @@
 import streamlit as st
 from utils.circuit_logic import get_reading_accuracy, get_practicals_attempted
 
-st.title("📊 Physics Readiness Dashboard")
+st.title("📊 Practicals Readiness Dashboard")
 st.write(
-    "Two different things make you ready for the Physics exam — how solid your theory is, "
-    "and how comfortable you are actually taking readings in a practical. This page tracks both separately."
+    "This page tracks how comfortable you are actually taking readings in a practical — "
+    "built automatically from how you use Circuit Lab, Resistance of a Wire, and Build Your Own Circuit."
 )
 
 ALL_PRACTICALS = ["Series Circuit", "Parallel Circuit", "Resistance of a Wire", "Build Your Own Circuit"]
 
-
-def percent_to_kcse_grade(pct):
-    bands = [
-        (80, "A"), (75, "A-"), (70, "B+"), (65, "B"), (60, "B-"),
-        (55, "C+"), (50, "C"), (45, "C-"), (40, "D+"), (35, "D"),
-        (30, "D-"), (0, "E"),
-    ]
-    for threshold, grade in bands:
-        if pct >= threshold:
-            return grade
-    return "E"
-
-
-# --- Theory Readiness ---------------------------------------------------
-st.subheader("📘 Theory Readiness")
-current_marks = st.number_input("Current average score in Physics (%)", min_value=0, max_value=100, value=65)
-target_grade_percent = st.number_input("Target average score (%)", min_value=0, max_value=100, value=80)
-remaining_assessments = st.number_input("Number of remaining assessments before the final exam", min_value=1, value=4)
-
-if st.button("Calculate Theory Target"):
-    total_points_needed = target_grade_percent * (remaining_assessments + 1)
-    points_needed_per_assessment = (total_points_needed - current_marks) / remaining_assessments
-
-    if points_needed_per_assessment > 100:
-        st.error("This target may not be mathematically reachable in the remaining assessments — consider a smaller step-by-step goal.")
-    else:
-        st.success(f"You need to average **{points_needed_per_assessment:.1f}%** on each remaining assessment to hit your target.")
-        target_letter = percent_to_kcse_grade(target_grade_percent)
-        st.caption(f"Target of {target_grade_percent}% corresponds to roughly a **{target_letter}** on the KCSE scale.")
-
-st.divider()
-
 # --- Practical Skills Readiness -----------------------------------------
 st.subheader("🔧 Practical Skills Readiness")
 st.write(
-    "This section fills in automatically from how you've used the Circuit Lab, Resistance of a Wire, "
-    "and Build Your Own Circuit pages — there's nothing to type here yourself."
+    "This section fills in automatically from your activity on the other pages — "
+    "there's nothing to type here yourself."
 )
 
 accuracy, attempt_count = get_reading_accuracy()
