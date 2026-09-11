@@ -1,3 +1,4 @@
+
 import streamlit as st
 import schemdraw
 import schemdraw.elements as elm
@@ -6,8 +7,9 @@ from utils.circuit_logic import (
     parallel_circuit_calc,
     show_worked_steps_series,
     show_worked_steps_parallel,
-    nice_max_scale,
     draw_analog_meter,
+    nice_max_scale,
+    log_reading_attempt,
 )
 
 
@@ -68,7 +70,9 @@ if circuit_type == "Series Circuit":
 
     if st.button("Check My Reading"):
         tolerance = meter_max * 0.05
-        if abs(my_reading - result["current"]) <= tolerance:
+        is_correct = abs(my_reading - result["current"]) <= tolerance
+        log_reading_attempt(is_correct, "Series Circuit")
+        if is_correct:
             st.success(f"Good reading! The actual current is {result['current']:.2f} A.")
         else:
             st.warning(f"Not quite — look again at where the needle sits between the tick marks. Actual current: {result['current']:.2f} A.")
@@ -120,7 +124,9 @@ else:  # Parallel
 
     if st.button("Check My Reading", key="parallel_reveal"):
         tolerance = meter_max * 0.05
-        if abs(my_reading - result["total_current"]) <= tolerance:
+        is_correct = abs(my_reading - result["total_current"]) <= tolerance
+        log_reading_attempt(is_correct, "Parallel Circuit")
+        if is_correct:
             st.success(f"Good reading! The actual total current is {result['total_current']:.2f} A.")
         else:
             st.warning(f"Not quite — look again at where the needle sits between the tick marks. Actual total current: {result['total_current']:.2f} A.")
