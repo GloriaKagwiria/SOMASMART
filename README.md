@@ -2,7 +2,7 @@
 
 # 📘 SomaSmart
 
-**A free, browser-based physics companion for students without a fully-equipped lab.**
+**A free, browser-based circuits lab companion for students without a fully-equipped lab.**
 
 [![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
