@@ -9,7 +9,7 @@
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Status](https://img.shields.io/badge/Status-Actively%20Being%20Built-F59F00)]()
 
-**[🚀 Try the live app](https://somasmartgit-kagwe-solutions.streamlit.app/)**
+**[🚀 Try the live app](https://somasmartgit-kagwesolutions.streamlit.app/)**
 
 </div>
 
