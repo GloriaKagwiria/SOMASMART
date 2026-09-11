@@ -1,3 +1,4 @@
+
 import matplotlib
 matplotlib.use("Agg")
 import streamlit as st
@@ -76,10 +77,6 @@ def general_parallel_calc(voltage, resistances):
 
 
 # --- Meter dial scales -------------------------------------------------
-# Each entry is (max_value, major_step, minor_step), hand-picked so that
-# major_step is always an exact multiple of minor_step — no messy numbers
-# like "every 0.2173 units." That's what makes the minor ticks usable for
-# an actual reading instead of just visual decoration.
 _SCALE_PRESETS = [
     (0.5, 0.1, 0.02),
     (1,   0.2, 0.05),
@@ -112,8 +109,7 @@ def nice_max_scale(value):
 def get_minor_step(value):
     """
     Returns the size of one minor tick on the dial this value would be drawn on.
-    Use this as the tolerance when checking a student's typed-in reading — it's
-    the finest increment the dial actually lets you distinguish.
+    Use this as the tolerance when checking a student's typed-in reading.
     """
     _, _, minor_step = _pick_scale(value)
     return minor_step
@@ -122,14 +118,8 @@ def get_minor_step(value):
 def draw_analog_meter(value, max_value=None, label="Current", unit="A", needle_color="crimson"):
     """
     Draws a semicircular analog meter dial with a needle pointing at `value`.
-    Major ticks are labeled; minor ticks between them are unlabeled but sized
-    to a clean, stated increment (shown as a caption on the dial itself), so
-    a student can read a precise value by counting minor ticks from the
-    nearest major one — not just eyeball "somewhere between."
-
-    `max_value` is accepted for backward compatibility with existing calls
-    but is no longer required — the scale is now always derived internally
-    from `value` so the calibration is guaranteed to be clean.
+    Minor ticks are sized to a clean, stated increment shown on the dial itself.
+    `max_value` is accepted for backward compatibility but no longer required.
     """
     dial_max, major_step, minor_step = _pick_scale(value)
     minor_per_major = round(major_step / minor_step)
@@ -165,3 +155,34 @@ def draw_analog_meter(value, max_value=None, label="Current", unit="A", needle_c
     ax.set_aspect("equal")
     ax.axis("off")
     return fig
+
+
+# --- Practical-skills tracking, used by the Physics Readiness Dashboard ---
+
+def mark_practical_attempted(practical_name):
+    """Records that a student has tried a given practical at least once this session."""
+    if "practicals_attempted" not in st.session_state:
+        st.session_state.practicals_attempted = set()
+    st.session_state.practicals_attempted.add(practical_name)
+
+
+def log_reading_attempt(correct, practical_name):
+    """Records one meter-reading check (right or wrong) against a specific practical."""
+    if "reading_attempts" not in st.session_state:
+        st.session_state.reading_attempts = []
+    st.session_state.reading_attempts.append({"correct": correct, "practical": practical_name})
+    mark_practical_attempted(practical_name)
+
+
+def get_reading_accuracy():
+    """Returns (accuracy_percent, attempt_count). accuracy_percent is None if nothing recorded yet."""
+    attempts = st.session_state.get("reading_attempts", [])
+    if not attempts:
+        return None, 0
+    correct_count = sum(1 for a in attempts if a["correct"])
+    return round(100 * correct_count / len(attempts), 1), len(attempts)
+
+
+def get_practicals_attempted():
+    """Returns the set of practical names the student has touched this session."""
+    return st.session_state.get("practicals_attempted", set())
